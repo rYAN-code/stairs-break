@@ -1,7 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
+import { Beam, Stairs } from './class';
+import { parameter, data } from './data'
 
-let camera, scene, raycaster, renderer, ambient, point;
+let camera, scene, renderer, ambient, point;
+let gui, raycaster;
 let width = window.innerWidth; //窗口宽度
 let height = window.innerHeight; //窗口高度
 // x, y, z 轴的单位向量
@@ -19,6 +23,7 @@ function init() {
     setRenderer();
     setController();
     setHelper();
+    setGui();
     setMesh();
 }
 
@@ -27,12 +32,10 @@ function setScene() {
 }
 
 function setLight() {
-    //点光源
-    point = new THREE.PointLight(0xffffff);
-    point.position.set(-800, 5000, 1000); //点光源位置
-    scene.add(point); //点光源添加到场景中
-    //环境光
-    ambient = new THREE.AmbientLight(0x444444);
+    point = new THREE.PointLight(0xffffff); //点光源
+    point.position.set(-800, 5000, 1000);   //点光源位置
+    scene.add(point);
+    ambient = new THREE.AmbientLight(0x444444);    //环境光
     scene.add(ambient);
 }
 
@@ -63,48 +66,45 @@ function setHelper() {
     scene.add(axes);
 }
 
+function setGui() {
+    gui = new GUI();
+    gui.width = 350;
+    let folder = gui.addFolder('Scene');
+    folder.add(data, 'model', ["beforeSplit", "afterSplit"]).onChange( setMesh() );
+    folder.open();
+
+    folder = gui.addFolder('Ladder');
+    folder.add(data, 'ladderWidth', 4820)
+    folder.add(data, 'ladderHeight', 3300)
+    folder.add(data, 'ladderDepth', 2900)
+    folder.open();
+
+    folder = gui.addFolder('Stair');
+    folder.add(data, 'stairWidth', 0).onChange(setMesh);
+    folder.add(data, 'stairHeight', 2900)
+    folder.add(data, 'stairDepth', 1400)
+    folder.add(data, 'stairNumber', 17)
+    folder.add(data, 'distance', 100)
+    folder.open();
+
+    folder = gui.addFolder('Beam');
+    folder.add(data, 'beamWidth', 200)
+    folder.add(data, 'beamHeight', 400)
+    folder.add(data, 'beamDepth', 4820)
+    folder.open();
+}
+
 function setMesh() {
-    class Stairs {
-        // 梯段类
-        constructor(width, height, deepth, number) {
-            this.width = width;
-            this.height = height;
-            this.deepth = deepth;
-            this.number = number;
-        }
-        build() {
-            let shape = new THREE.Shape();
-            const perWidth = this.width / this.number;
-            const perHeight = this.height / this.number;
-            shape.moveTo(100, 0);
-            shape.lineTo(100, 180 + perHeight)
-            for (let i = 1; i < this.number + 1; i++) {
-                shape.lineTo(100 + perWidth * i, 180 + perHeight * i);
-                if (i < this.number){
-                    shape.lineTo(100 + perWidth * i, 180 + perHeight * (i + 1));
-                }
-            }
-            let extrudeSettings = {
-                steps: 2,
-                depth: this.deepth,
-                bevelEnabled: false,
-            };
-            return new THREE.ExtrudeBufferGeometry(shape, extrudeSettings);
-        }
-    }
-    class Beam {
-        // 梯梁类
-        constructor(x, y, z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-        build() {
-            return new THREE.BoxGeometry(this.x, this.y, this.z);
-        }
-    }
-    function buildBeam() {
-        let beam = new Beam(200, 400, 2900);
+
+    /**
+     * 传入参数，构建梯梁的网格模型
+     * @param {梯梁的宽} x 
+     * @param {梯梁的高} y 
+     * @param {梯梁的长} z 
+     * @returns THREE.Mesh
+     */
+    function buildBeam(x, y, z) {
+        let beam = new Beam(x, y, z);
         let beamGeometry = beam.build();
         let material = new THREE.MeshLambertMaterial({
             color: 0x00e600,
@@ -112,8 +112,17 @@ function setMesh() {
         });
         return new THREE.Mesh(beamGeometry, material);
     }
-    function buildStairs() {
-        let stairs = new Stairs(4420, 2900 - (400 - 180), 1400, 17);
+
+    /**
+     * 传入参数，构建梯段的网格模型
+     * @param {梯段的总宽度} width 
+     * @param {梯段的总高度} height 
+     * @param {梯段的长度} depth 
+     * @param {梯段的阶梯个数} number 
+     * @returns THREE.Mesh
+     */
+    function buildStairs(width, height, depth, number) {
+        let stairs = new Stairs(width, height, depth, number);
         let stairsGeometry = stairs.build();
         let material = new THREE.MeshLambertMaterial({
             color: 0xff0000,
@@ -122,15 +131,44 @@ function setMesh() {
         return new THREE.Mesh(stairsGeometry, material);
     }
 
+    if (parameter.model === 'beforeSplit') {
+        buildGeometry();
+    } else if (parameter.model === 'afterSplit') {
+        splitGeometry();
+    }
 
-    let beamDown = buildBeam();
-    let stairs = buildStairs();
-    let group = new THREE.Group();
-    group.add(beam)
-    group.add(stairs)
-    group.translateOnAxis(v_x, 100)
-    group.translateOnAxis(v_y, -200)
-    scene.add(group)
+    function buildGeometry() {
+        let beamDown = buildBeam(200, 400, 2900);
+    
+        let beamUp = buildBeam(200, 400, 2900);
+        beamUp.translateOnAxis(v_x, 4520);
+        beamUp.translateOnAxis(v_y, 2900);
+    
+        let stairs = buildStairs(data.stairWidth, data.stairHeight, data.stairDepth, data.stairNumber);
+        stairs.translateOnAxis(v_z, 50)
+    
+        let group1 = new THREE.Group();
+        let group2 = new THREE.Group();
+    
+        group2.add(beamUp);
+        group2.add(stairs);
+        group2.translateOnAxis(v_x, 100);
+    
+        group1.add(beamDown);
+        group1.add(group2);
+        group1.translateOnAxis(v_x, 100);
+        group1.translateOnAxis(v_y, -200);
+    
+        let group3 = new THREE.Group();
+        group3 = group1.clone().rotateOnAxis(v_y, Math.PI).translateOnAxis(v_x, -4620)
+    
+        scene.add(group1)
+        scene.add(group3)
+    }
+
+    function splitGeometry() {
+
+    }
 }
 
 function render() {
@@ -141,3 +179,5 @@ function animate() {
     requestAnimationFrame(animate);
     render();
 }
+
+
