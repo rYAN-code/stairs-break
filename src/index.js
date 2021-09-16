@@ -1,17 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
-import { Beam, Stairs } from './class';
-import { parameter, data } from './data'
+
+import { data } from './data'
+import { buildGeometry, splitGeometry } from './build'
 
 let camera, scene, renderer, ambient, point;
-let gui, raycaster;
+let guiBefore, guiAfter;
+let controlUpdate = false;
 let width = window.innerWidth; //窗口宽度
 let height = window.innerHeight; //窗口高度
-// x, y, z 轴的单位向量
-let v_x = new THREE.Vector3(1, 0, 0);
-let v_y = new THREE.Vector3(0, 1, 0);
-let v_z = new THREE.Vector3(0, 0, 1);
+let group = new THREE.Group();  //整个模型对象
+let update = {
+    '拆分前': () => { controlUpdate = false; setMesh(); },
+    '拆分后': () => { controlUpdate = true; setMesh(); }
+}
 
 init();
 animate();
@@ -67,107 +70,79 @@ function setHelper() {
 }
 
 function setGui() {
-    gui = new GUI();
-    gui.width = 350;
-    let folder = gui.addFolder('Scene');
-    folder.add(data, 'model', ["beforeSplit", "afterSplit"]).onChange( setMesh() );
-    folder.open();
+    setGuiBefore();
+    setGuiAfter();
 
-    folder = gui.addFolder('Ladder');
-    folder.add(data, 'ladderWidth', 4820)
-    folder.add(data, 'ladderHeight', 3300)
-    folder.add(data, 'ladderDepth', 2900)
-    folder.open();
+    function setGuiBefore() {
+        guiBefore = new GUI();
+        guiBefore.width = 300;
+        guiBefore.add(update, '拆分前')
 
-    folder = gui.addFolder('Stair');
-    folder.add(data, 'stairWidth', 0).onChange(setMesh);
-    folder.add(data, 'stairHeight', 2900)
-    folder.add(data, 'stairDepth', 1400)
-    folder.add(data, 'stairNumber', 17)
-    folder.add(data, 'distance', 100)
-    folder.open();
+        let folder = guiBefore.addFolder('楼梯');
+        folder.add(data, 'ladderWidth', 4820)
+        folder.add(data, 'ladderHeight', 3300)
+        folder.add(data, 'ladderDepth', 2900)
+        // folder.open();
 
-    folder = gui.addFolder('Beam');
-    folder.add(data, 'beamWidth', 200)
-    folder.add(data, 'beamHeight', 400)
-    folder.add(data, 'beamDepth', 4820)
-    folder.open();
+        folder = guiBefore.addFolder('梯段');
+        folder.add(data, 'stairWidth', 1).onChange(setMesh);
+        folder.add(data, 'stairHeight', 1).onChange(setMesh);
+        folder.add(data, 'stairDepth', 1).onChange(setMesh);
+        folder.add(data, 'stairNumber', 1).onChange(setMesh);
+        folder.add(data, 'distance', 100).onChange(setMesh);
+        folder.add(data, 'thickness', 180).onChange(setMesh);
+        folder.open();
+
+        folder = guiBefore.addFolder('梯梁');
+        folder.add(data, 'beamWidth', 1).onChange(setMesh);
+        folder.add(data, 'beamHeight', 1).onChange(setMesh);
+        folder.add(data, 'beamDepth', 1).onChange(setMesh);
+        folder.open();
+    }
+
+    function setGuiAfter() {
+        guiAfter = new GUI();
+        guiAfter.add(update, '拆分后')
+
+        let folder = guiAfter.addFolder('梯段');
+        folder.add(data, 'stairWidth', 1).onChange(setMesh);
+        folder.add(data, 'stairHeight', 1).onChange(setMesh);
+        folder.add(data, 'stairDepth', 1).onChange(setMesh);
+        folder.add(data, 'stairNumber', 1).onChange(setMesh);
+        folder.add(data, 'thickness', 1).onChange(setMesh);
+        folder.add(data, 'horizontalWidth', 1).onChange(setMesh);
+        folder.open();
+
+        folder = guiAfter.addFolder('梯梁');
+        folder.add(data, 'beamWidth', 1).onChange(setMesh);
+        folder.add(data, 'beamHeight', 1).onChange(setMesh);
+        folder.add(data, 'beamDepth', 1).onChange(setMesh);
+        folder.open();
+
+        folder = guiAfter.addFolder('拼缝');
+        folder.add(data, 'pieceOne', 1).onChange(setMesh);
+        folder.add(data, 'pieceTwo', 1).onChange(setMesh);
+        folder.add(data, 'pieceThree', 1).onChange(setMesh);
+        folder.add(data, 'pieceFour', 1).onChange(setMesh);
+        folder.add(data, 'pieceFive', 1).onChange(setMesh);
+        folder.add(data, 'pieceSix', 1).onChange(setMesh);
+        folder.open();
+
+        
+    }
+
 }
 
 function setMesh() {
 
-    /**
-     * 传入参数，构建梯梁的网格模型
-     * @param {梯梁的宽} x 
-     * @param {梯梁的高} y 
-     * @param {梯梁的长} z 
-     * @returns THREE.Mesh
-     */
-    function buildBeam(x, y, z) {
-        let beam = new Beam(x, y, z);
-        let beamGeometry = beam.build();
-        let material = new THREE.MeshLambertMaterial({
-            color: 0x00e600,
-            side: THREE.DoubleSide,
-        });
-        return new THREE.Mesh(beamGeometry, material);
-    }
-
-    /**
-     * 传入参数，构建梯段的网格模型
-     * @param {梯段的总宽度} width 
-     * @param {梯段的总高度} height 
-     * @param {梯段的长度} depth 
-     * @param {梯段的阶梯个数} number 
-     * @returns THREE.Mesh
-     */
-    function buildStairs(width, height, depth, number) {
-        let stairs = new Stairs(width, height, depth, number);
-        let stairsGeometry = stairs.build();
-        let material = new THREE.MeshLambertMaterial({
-            color: 0xff0000,
-            side: THREE.DoubleSide,
-        });
-        return new THREE.Mesh(stairsGeometry, material);
-    }
-
-    if (parameter.model === 'beforeSplit') {
-        buildGeometry();
-    } else if (parameter.model === 'afterSplit') {
-        splitGeometry();
-    }
-
-    function buildGeometry() {
-        let beamDown = buildBeam(200, 400, 2900);
-    
-        let beamUp = buildBeam(200, 400, 2900);
-        beamUp.translateOnAxis(v_x, 4520);
-        beamUp.translateOnAxis(v_y, 2900);
-    
-        let stairs = buildStairs(data.stairWidth, data.stairHeight, data.stairDepth, data.stairNumber);
-        stairs.translateOnAxis(v_z, 50)
-    
-        let group1 = new THREE.Group();
-        let group2 = new THREE.Group();
-    
-        group2.add(beamUp);
-        group2.add(stairs);
-        group2.translateOnAxis(v_x, 100);
-    
-        group1.add(beamDown);
-        group1.add(group2);
-        group1.translateOnAxis(v_x, 100);
-        group1.translateOnAxis(v_y, -200);
-    
-        let group3 = new THREE.Group();
-        group3 = group1.clone().rotateOnAxis(v_y, Math.PI).translateOnAxis(v_x, -4620)
-    
-        scene.add(group1)
-        scene.add(group3)
-    }
-
-    function splitGeometry() {
-
+    if (!controlUpdate) {
+        removeGroup();
+        group = buildGeometry();
+        scene.add(group)
+    } else {
+        removeGroup();
+        group = splitGeometry();
+        scene.add(group)
     }
 }
 
@@ -180,4 +155,22 @@ function animate() {
     render();
 }
 
+function removeGroup() {
+    let group_to_remove = [];
+    // Three.js删除模型对象(.remove()和·dispose()方法)
+    group.traverse(function (obj) {
+        if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            obj.material.dispose();
+        }
+        if (obj instanceof THREE.Group) {
+            group_to_remove.push(obj)
+        }
+    })
+    // 删除所有需要删除的group
+    group_to_remove.forEach((items) => {
+        group.remove(items);
+    })
+}
 
+export { update }

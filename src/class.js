@@ -34,9 +34,7 @@ class Stairs {
                 shape.lineTo(perWidth * i, distance + perHeight * (i + 1));
             }
         }
-        shape.lineTo(this.width, this.height - distance + perHeight)
-        console.log(shape)
-        console.log(this.width)
+        shape.lineTo(this.width, this.height - perHeight)
         let extrudeSettings = {
             steps: 2,
             depth: this.deepth,
@@ -46,4 +44,21 @@ class Stairs {
     }
 }
 
-export {Beam, Stairs}
+class Horizontal {
+    // 水平梯段类
+    constructor(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    build() {
+        return new THREE.BoxGeometry(this.x, this.y, this.z);
+    }
+}
+
+class Ear {
+    // 挑耳类
+    constructor() {}
+}
+
+export {Beam, Stairs, Horizontal}
