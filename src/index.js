@@ -1,12 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
 
-import { data } from './data'
+import {setGuiBefore, setGuiAfter1, setGuiAfter2} from './gui'
 import { buildGeometry, splitGeometry } from './build'
 
 let camera, scene, renderer, ambient, point;
-let guiBefore, guiAfter;
 let controlUpdate = false;
 let width = window.innerWidth; //窗口宽度
 let height = window.innerHeight; //窗口高度
@@ -15,6 +13,7 @@ let update = {
     '拆分前': () => { controlUpdate = false; setMesh(); },
     '拆分后': () => { controlUpdate = true; setMesh(); }
 }
+
 
 init();
 animate();
@@ -71,70 +70,11 @@ function setHelper() {
 
 function setGui() {
     setGuiBefore();
-    setGuiAfter();
-
-    function setGuiBefore() {
-        guiBefore = new GUI();
-        guiBefore.width = 300;
-        guiBefore.add(update, '拆分前')
-
-        let folder = guiBefore.addFolder('楼梯');
-        folder.add(data, 'ladderWidth', 4820)
-        folder.add(data, 'ladderHeight', 3300)
-        folder.add(data, 'ladderDepth', 2900)
-        // folder.open();
-
-        folder = guiBefore.addFolder('梯段');
-        folder.add(data, 'stairWidth', 1).onChange(setMesh);
-        folder.add(data, 'stairHeight', 1).onChange(setMesh);
-        folder.add(data, 'stairDepth', 1).onChange(setMesh);
-        folder.add(data, 'stairNumber', 1).onChange(setMesh);
-        folder.add(data, 'distance', 100).onChange(setMesh);
-        folder.add(data, 'thickness', 180).onChange(setMesh);
-        folder.open();
-
-        folder = guiBefore.addFolder('梯梁');
-        folder.add(data, 'beamWidth', 1).onChange(setMesh);
-        folder.add(data, 'beamHeight', 1).onChange(setMesh);
-        folder.add(data, 'beamDepth', 1).onChange(setMesh);
-        folder.open();
-    }
-
-    function setGuiAfter() {
-        guiAfter = new GUI();
-        guiAfter.add(update, '拆分后')
-
-        let folder = guiAfter.addFolder('梯段');
-        folder.add(data, 'stairWidth', 1).onChange(setMesh);
-        folder.add(data, 'stairHeight', 1).onChange(setMesh);
-        folder.add(data, 'stairDepth', 1).onChange(setMesh);
-        folder.add(data, 'stairNumber', 1).onChange(setMesh);
-        folder.add(data, 'thickness', 1).onChange(setMesh);
-        folder.add(data, 'horizontalWidth', 1).onChange(setMesh);
-        folder.open();
-
-        folder = guiAfter.addFolder('梯梁');
-        folder.add(data, 'beamWidth', 1).onChange(setMesh);
-        folder.add(data, 'beamHeight', 1).onChange(setMesh);
-        folder.add(data, 'beamDepth', 1).onChange(setMesh);
-        folder.open();
-
-        folder = guiAfter.addFolder('拼缝');
-        folder.add(data, 'pieceOne', 1).onChange(setMesh);
-        folder.add(data, 'pieceTwo', 1).onChange(setMesh);
-        folder.add(data, 'pieceThree', 1).onChange(setMesh);
-        folder.add(data, 'pieceFour', 1).onChange(setMesh);
-        folder.add(data, 'pieceFive', 1).onChange(setMesh);
-        folder.add(data, 'pieceSix', 1).onChange(setMesh);
-        folder.open();
-
-        
-    }
-
+    setGuiAfter1();
+    setGuiAfter2();
 }
 
 function setMesh() {
-
     if (!controlUpdate) {
         removeGroup();
         group = buildGeometry();
@@ -173,4 +113,4 @@ function removeGroup() {
     })
 }
 
-export { update }
+export {setMesh, removeGroup, update}

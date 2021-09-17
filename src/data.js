@@ -4,7 +4,7 @@ let data = {
     'ladderWidth': 4820,
     'ladderHeight': 3300,
     'ladderDepth': 2900,
-    
+
     // 梯段参数
     'stairWidth': 4420,
     'stairHeight': 2900,
@@ -17,6 +17,9 @@ let data = {
     'beamWidth': 200,
     'beamHeight': 400,
     'beamDepth': 2900,
+    'sinkHeight': 200,
+    'earWidth': 200,
+    'earHeight': 200,
 
     'distance': 100,
     'thickness': 180,
@@ -26,34 +29,79 @@ let data = {
     'pieceTwo': 20,
     'pieceThree': 20,
     'pieceFour': 20,
-    'pieceFive': 20,
+    'pieceFive': 30,
     'pieceSix': 20,
-
-    params: function () {
-        let params = data;
-        // params.model = data.model;
-        // // 楼梯参数
-        // params.ladderWidth = data.ladderWidth;
-        // params.ladderHeight = data.ladderHeight;
-        // params.ladderDepth = data.ladderDepth;
-        // // 梯段参数
-        // params.stairWidth = data.stairWidth;
-        // params.stairHeight = data.stairHeight;
-        // params.stairDepth = data.stairDepth;
-        // params.stairNumber = data.stairNumber;
-        // // 梯梁参数
-        // params.beamWidth = data.beamWidth;
-        // params.beamHeight = data.beamHeight;
-        // params.beamDepth = data.beamDepth;
-        // params.distance = data.distance;
-        // params.thickness = data.thickness;
-        return params
+};
+Object.defineProperties(data, {
+    'stairDepth': {
+        get: () => { return data._stairDepth = (data.ladderDepth - data.distance) / 2 || 1400 },
+        // get:function(){return this._stairDepth = (this.ladderDepth - this.distance) / 2},
+        set: (v) => { data.distance = data.ladderDepth - v * 2 }
     },
-}
-let parameter = data.params()
-// return data;
+    'beamDepth': {
+        get: () => { return data._beamDepth = data.ladderDepth || 2900 },
+        set: (v) => { data.ladderDepth = v; }
+    },
+    'stairWidth': {
+        get: () => { return data._stairWidth = data.ladderWidth - data.beamWidth * 2 || 4420 },
+        // get:function(){return this._stairDepth = (this.ladderDepth - this.distance) / 2},
+        set: (v) => { data.ladderWidth = data.beamWidth * 2 + v }
+    },
+    'stairHeight': {
+        get: () => { return data.stairHeight = data.ladderHeight - data.beamWidth * 2 || 2900 },
+        // get:function(){return this._stairDepth = (this.ladderDepth - this.distance) / 2},
+        set: (v) => { data.ladderHeight = data.beamHeight + v }
+    },
+})
+//     return data;
 // })();
 
+let parameter1 = deepClone(data);
+Object.defineProperties(parameter1, {
+    'sinkHeight': {
+        get: function(){
+            return this._sinkHeight = this.beamHeight - this.earHeight;
+        },
+        set: function(v){
+            this.earHeight = this.beamHeight - v;
+        }
+    }
+})
+
+let parameter2 = deepClone(data);
+Object.defineProperties(parameter2, {
+    'sinkHeight': {
+        get: function(){
+            return this._sinkHeight = this.beamHeight - this.earHeight;
+        },
+        set: function(v){
+            this.earHeight = this.beamHeight - v;
+        }
+    }
+})
+
+function deepClone(obj, result) {
+    var result = result || {};
+    for (let prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+            if (typeof obj[prop] == 'object' && obj[prop] !== null) {
+                // 引用值（obj/array）,且不为null
+                if (Object.prototype.toString.call(obj[prop]) === '[object Object]') {
+                    // 对象
+                    result[prop] = {};
+                } else {
+                    // 数组
+                    result[prop] = [];
+                }
+                deepClone(obj[prop], result[prop]);
+            } else {
+                // 原始值或函数
+                result[prop] = obj[prop];
+            }
+        }
+    }
+    return result;
+}
 
 
-export { parameter, data }
+export { data, parameter1, parameter2 }
