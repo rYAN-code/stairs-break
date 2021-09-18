@@ -1,8 +1,8 @@
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module'
 
-import { data, parameter1, parameter2 } from './data'
-import { setMesh, removeGroup, update } from './index'
-let controlUpdate = false
+import { data, parameter1, parameter2, basic } from './data'
+import { setMesh, update } from './index'
+import { down, mid1, mid2 } from './build'
 
 
 function setGuiBefore() {
@@ -14,7 +14,7 @@ function setGuiBefore() {
     let folder = guiBefore.addFolder('楼梯');
     folder.add(data, 'ladderWidth', 4820).onChange(setMesh).listen();
     folder.add(data, 'ladderHeight', 3300).onChange(setMesh).listen();
-    folder.add(data, 'ladderDepth', 2900).onChange(setMesh).listen();
+    folder.add(data, 'ladderDepth', 2900).onChange(down).listen();
     folder.open();
 
     folder = guiBefore.addFolder('梯段');
@@ -49,7 +49,7 @@ function setGuiAfter1() {
     let folder = guiAfter.addFolder('梯段1');
     folder.add(parameter1, 'stairWidth', 1).onChange(setMesh).listen();
     folder.add(parameter1, 'stairHeight', 1).onChange(setMesh).listen();
-    folder.add(parameter1, 'stairDepth', 1).onChange(setMesh).listen();
+    folder.add(parameter1, 'stairDepth', 1).onChange(mid1).listen();
     folder.add(parameter1, 'stairNumber', 1).onChange(setMesh).listen();
     folder.add(data, 'thickness', 1).onChange(setMesh).listen();
     folder.add(parameter1, 'horizontalWidth', 1).onChange(setMesh).listen();
@@ -72,7 +72,7 @@ function setGuiAfter2() {
     let folder = guiAfter.addFolder('梯段2');
     folder.add(parameter2, 'stairWidth', 1).onChange(setMesh).listen();
     folder.add(parameter2, 'stairHeight', 1).onChange(setMesh).listen();
-    folder.add(parameter2, 'stairDepth', 1).onChange(setMesh).listen();
+    folder.add(parameter2, 'stairDepth', 1).onChange(mid2).listen();
     folder.add(parameter2, 'stairNumber', 1).onChange(setMesh).listen();
     folder.add(data, 'thickness', 1).onChange(setMesh).listen();
     folder.add(parameter2, 'horizontalWidth', 1).onChange(setMesh).listen();
@@ -88,4 +88,5 @@ function setGuiAfter2() {
     folder.open();
 }
 
-export {setGuiBefore, setGuiAfter1, setGuiAfter2, controlUpdate}
+
+export { setGuiBefore, setGuiAfter1, setGuiAfter2 }

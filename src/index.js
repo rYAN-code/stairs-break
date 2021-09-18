@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 import {setGuiBefore, setGuiAfter1, setGuiAfter2} from './gui'
-import { buildGeometry, splitGeometry } from './build'
+import { buildGeometry, splitGeometry, removeGroup } from './build'
 
 let camera, scene, renderer, ambient, point;
 let controlUpdate = false;
@@ -95,22 +95,6 @@ function animate() {
     render();
 }
 
-function removeGroup() {
-    let group_to_remove = [];
-    // Three.js删除模型对象(.remove()和·dispose()方法)
-    group.traverse(function (obj) {
-        if (obj instanceof THREE.Mesh) {
-            obj.geometry.dispose();
-            obj.material.dispose();
-        }
-        if (obj instanceof THREE.Group) {
-            group_to_remove.push(obj)
-        }
-    })
-    // 删除所有需要删除的group
-    group_to_remove.forEach((items) => {
-        group.remove(items);
-    })
-}
 
-export {setMesh, removeGroup, update}
+
+export {setMesh, update}

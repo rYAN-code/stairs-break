@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Beam, Stairs, Ear } from './class';
-import { data, parameter1, parameter2  } from './data'
+import { data, parameter1, parameter2, basic, deepClone } from './data'
 
 let group = new THREE.Group();
 // x, y, z 轴的单位向量
@@ -84,7 +84,7 @@ function splitEar(width, height, depth, sinkHeight, earWidth, earHeight) {
     return new THREE.Mesh(earGeometry, material);
 }
 
-
+// 建造拆分前的模型
 function buildGeometry() {
     let beamDown1 = buildBeam(data.beamWidth, data.beamHeight, data.beamDepth);
     beamDown1.translateOnAxis(v_x, data.beamWidth / 2).translateOnAxis(v_y, -(data.beamHeight) / 2);
@@ -107,15 +107,16 @@ function buildGeometry() {
     let group1 = new THREE.Group();
     let group2 = new THREE.Group();
 
-    group1.add(beamUp1, beamDown1, stairs1)
+    group1.add(beamUp1, beamDown1, stairs1);
 
-    group2.add(beamUp2, beamDown2, stairs2).rotateOnAxis(v_y, Math.PI).translateOnAxis(v_x, - data.stairWidth - data.beamWidth * 2)
+    group2.add(beamUp2, beamDown2, stairs2).rotateOnAxis(v_y, Math.PI).translateOnAxis(v_x, - data.stairWidth - data.beamWidth * 2);
 
-    group.add(group1, group2)
+    group.add(group1, group2);
 
     return group;
 }
 
+// 建造拆分后的模型
 function splitGeometry() {
 
     let stairs1 = splitStairs(parameter1.stairWidth, parameter1.stairHeight, parameter1.stairDepth - data.pieceOne - data.pieceTwo, parameter1.stairNumber, data.thickness, parameter1.horizontalWidth);
@@ -126,9 +127,9 @@ function splitGeometry() {
 
     let stairs2 = splitStairs(parameter2.stairWidth, parameter2.stairHeight, parameter2.stairDepth - data.pieceFour - data.pieceThree, parameter2.stairNumber, data.thickness, parameter2.horizontalWidth);
     stairs2.translateOnAxis(v_z, data.pieceThree);
-    
-    let ear2 = splitEar(parameter2.beamWidth, parameter2.beamHeight, parameter2.beamDepth, parameter2.sinkHeight - data.pieceSix, parameter2.earWidth - data.pieceFive, parameter2.earHeight);
-    ear2.translateOnAxis(v_x, parameter2.stairWidth + parameter2.horizontalWidth * 2 + parameter2.beamWidth + data.pieceFive).translateOnAxis(v_y, parameter2.stairHeight - data.thickness - data.pieceSix).translateOnAxis(v_z, -parameter2.beamDepth / 2)
+
+    let ear2 = splitEar(parameter2.beamWidth, parameter2.beamHeight, parameter2.beamDepth, parameter2.sinkHeight, parameter2.earWidth, parameter2.earHeight);
+    ear2.translateOnAxis(v_x, parameter2.stairWidth + parameter2.horizontalWidth * 2 + parameter2.beamWidth + data.pieceFive).translateOnAxis(v_y, parameter2.stairHeight + data.thickness + data.pieceSix).translateOnAxis(v_z, -parameter2.beamDepth / 2)
 
     let group1 = new THREE.Group();
     let group2 = new THREE.Group();
@@ -136,9 +137,50 @@ function splitGeometry() {
     group1.add(stairs1, ear1);
     group2.add(stairs2, ear2).rotateOnAxis(v_y, Math.PI).translateOnAxis(v_x, -(parameter2.stairWidth + parameter2.horizontalWidth * 2 + parameter2.beamWidth + data.pieceFive))
 
-    group.add(group1, group2)
+    group.add(group1, group2);
 
     return group;
 }
 
-export { buildGeometry, splitGeometry }
+// 保证拆分前向下延伸
+function down() {
+    removeGroup();
+    group = buildGeometry();
+    let d = data.ladderDepth - basic.ladderDepth;
+    deepClone(data, basic);
+    group.translateOnAxis(v_z, d / 2)
+}
+
+// 保证拆分后中间延伸
+function mid1() {
+    removeGroup();
+    group = splitGeometry();
+    // 起点先往原来的移动一半距离，再往新的移动它的一半距离
+    group.children[0].children[0].translateOnAxis(v_z, data.stairDepth / 2 - parameter1.stairDepth / 2)
+}
+function mid2() {
+    removeGroup();
+    group = splitGeometry();
+    // 起点先往原来的移动一半距离，再往新的移动它的一半距离
+    group.children[1].children[0].translateOnAxis(v_z, data.stairDepth / 2 - parameter2.stairDepth / 2)
+}
+
+function removeGroup() {
+    let group_to_remove = [];
+    // Three.js删除模型对象(.remove()和·dispose()方法)
+    group.traverse(function (obj) {
+        if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            obj.material.dispose();
+        }
+        if (obj instanceof THREE.Group) {
+            group_to_remove.push(obj)
+        }
+    })
+    // 删除所有需要删除的group
+    group_to_remove.forEach((items) => {
+        group.remove(items);
+    })
+}
+
+export { buildGeometry, splitGeometry, removeGroup, down, mid1, mid2 }

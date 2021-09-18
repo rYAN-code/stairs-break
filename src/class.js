@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { parameter2 as parameter2 } from './data';
 
 class Beam {
     // 梯梁类
     constructor(width, height, depth) {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
+        // this.width = width;
+        // this.height = height;
+        // this.depth = depth;
+        Object.assign(this, {width, height, depth})
     }
     build() {
         return new THREE.BoxGeometry(this.width, this.height, this.depth);
@@ -16,12 +16,7 @@ class Beam {
 class Stairs {
     // 梯段类
     constructor(width, height, depth, number, thickness, horizontalWidth) {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
-        this.number = number;
-        this.thickness = thickness;
-        this.horizontalWidth = horizontalWidth;
+        Object.assign(this, {width, height, depth, number, thickness, horizontalWidth})
     }
     build() {
         let distance = this.thickness / Math.sin(Math.atan(this.width / this.height))
@@ -75,12 +70,7 @@ class Ear extends Beam {
     // 挑耳类
     constructor(width, height, depth, sinkHeight, earWidth, earHeight, pieceFive, pieceSix) {
         super(width, height, depth);
-        this.height = height;
-        this.sinkHeight = sinkHeight;
-        this.earWidth = earWidth;
-        this.earHeight = earHeight;
-        this.pieceFive = pieceFive;
-        this.pieceSix = pieceSix;
+        Object.assign(this, {sinkHeight, earWidth, earHeight, pieceFive, pieceSix})
     }
     split() {
         let shape = new THREE.Shape();

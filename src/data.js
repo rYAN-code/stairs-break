@@ -1,4 +1,4 @@
-// let data = (function () {
+// 拆分前的参数
 let data = {
     // 楼梯参数
     'ladderWidth': 4820,
@@ -44,18 +44,15 @@ Object.defineProperties(data, {
     },
     'stairWidth': {
         get: () => { return data._stairWidth = data.ladderWidth - data.beamWidth * 2 || 4420 },
-        // get:function(){return this._stairDepth = (this.ladderDepth - this.distance) / 2},
         set: (v) => { data.ladderWidth = data.beamWidth * 2 + v }
     },
     'stairHeight': {
-        get: () => { return data.stairHeight = data.ladderHeight - data.beamWidth * 2 || 2900 },
-        // get:function(){return this._stairDepth = (this.ladderDepth - this.distance) / 2},
+        get: () => { return data.stairHeight = data.ladderHeight - data.beamHeight || 2900 },
         set: (v) => { data.ladderHeight = data.beamHeight + v }
     },
 })
-//     return data;
-// })();
 
+// 拆分后梯段一的参数
 let parameter1 = deepClone(data);
 Object.defineProperties(parameter1, {
     'sinkHeight': {
@@ -68,6 +65,7 @@ Object.defineProperties(parameter1, {
     }
 })
 
+// 拆分后梯段二的参数
 let parameter2 = deepClone(data);
 Object.defineProperties(parameter2, {
     'sinkHeight': {
@@ -103,5 +101,6 @@ function deepClone(obj, result) {
     return result;
 }
 
+let basic = deepClone(data);
 
-export { data, parameter1, parameter2 }
+export { data, parameter1, parameter2, basic, deepClone }
